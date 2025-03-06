@@ -34,11 +34,11 @@ return new class extends Migration
         // Tabla planes
         Schema::create('planes', function (Blueprint $table) {
             $table->id();
+            $table->text('imagen');
             $table->string('nombre', 100);
             $table->string('descripcion', 255);
             $table->integer('duracion')->unsigned();
             $table->double('precio', 8, 2);
-            $table->text('imagen');
             $table->timestamps();
         });
 
