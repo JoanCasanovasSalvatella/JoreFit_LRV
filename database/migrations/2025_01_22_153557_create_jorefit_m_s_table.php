@@ -14,20 +14,22 @@ return new class extends Migration
         // Tabla usuarios
         Schema::create('usuarios', function (Blueprint $table) {
             $table->id();
-            $table->string('usuario', 50)->unique();
+            $table->string('correo')->unique();
             $table->string('contrasena', 50);
             $table->string('nombre', 50);
             $table->string('apellido', 50);
             $table->date('fecha_nacimiento');
-            $table->double('altura');
+            $table->double('altura')->nullable();
             $table->double('pesoActual');
             $table->double('pesoObjetivo');
             $table->string('nivel');
             $table->string('rol');
-            $table->string('numero_tarjeta', 20);
-            $table->string('nombre_titular', 100);
-            $table->string('cvv', 3);
-            $table->date('fecha_vencimiento');
+            $table->string('numero_tarjeta', 20)->nullable();
+            $table->string('nombre_titular', 100)->nullable();
+            $table->string('cvv', 3)->nullable();
+            $table->date('fecha_vencimiento')->nullable();
+            $table->string('recovery_code')->nullable();
+            $table->timestamp('code_expires_at')->nullable();
             $table->timestamps();
         });
 
@@ -47,7 +49,7 @@ return new class extends Migration
             $table->id();
             $table->text('imagen');
             $table->string('nombres', 100);
-            $table->string('descripcion', 255);
+            $table->text('descripcion');
             $table->integer('series')->unsigned();
             $table->string('repeticiones');
             $table->string('tipo', 100);

@@ -39,7 +39,7 @@ class PlanesSeeder extends Seeder
             ],
             [
                 'imagen' => 'https://drive.google.com/file/d/1V3RzujW8SXPKT_nKIYiw_Ee8GpjZF451/view?usp=drive_link',
-                'nombre' => 'Ejercicios Cardiovasculares',
+                'nombre' => 'Ejercicio Cardiovascular',
                 'descripcion' => 'Mejora la resistencia y quema calorías con sesiones de cardio variadas.',
                 'duracion' => 6,
                 'precio' => 34.99
