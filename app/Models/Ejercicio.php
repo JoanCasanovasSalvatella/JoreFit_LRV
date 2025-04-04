@@ -14,7 +14,7 @@ class Ejercicio extends Model
 
     protected $fillable = [
         'imagen',
-        'nombre',
+        'nombres',
         'descripcion',
         'series',
         'repeticiones',

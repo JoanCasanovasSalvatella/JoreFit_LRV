@@ -71,7 +71,7 @@ Route::put('/ejerciciosAsignados/Modify/{id}', [EjercicioController::class, 'mod
 Route::patch('/ejerciciosAsignados/ModifyCamp/{id}', [EjercicioController::class, 'modificarCampoEjerciciosAsignados']);
 Route::delete('/ejerciciosAsignados/Delete/{id}', [EjercicioController::class, 'eliminarEjerciciosAsignados']);
 
-Route::get('/ejerciciosAsignados/SeeMy/{id}/{id}', [EjercicioController::class, 'losEjerciciosDeMiPlan']);
+Route::get('/ejerciciosAsignados/SeeMy/{idUsu}/{idPlan}', [EjercicioController::class, 'losEjerciciosDeMiPlan']);
 Route::get('/ejerciciosAsignados/Change/{id}', [EjercicioController::class, 'cambiarEjerciciosAsignados']);
 Route::patch('/ejerciciosAsignados/Update/{id}', [EjercicioController::class, 'actualizarEjerciciosAsignados']);
 Route::patch('/ejerciciosAsignados/Complete/{id}', [EjercicioController::class, 'completarEjerciciosAsignados']);

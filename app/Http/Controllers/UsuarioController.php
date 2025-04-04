@@ -52,16 +52,16 @@ class UsuarioController extends Controller
 
     public function verificarEmail(Request $request) {
         $validator = Validator::make($request->all(), [
-            'email' => 'required|email'
+            'correo' => 'required|email|string|max:255|unique:usuarios,correo'
         ]);
 
         if ($validator->fails()) {
             return response()->json(['error' => $validator->errors()], 422); // Código 422 para validaciones
         }
 
-        $user = User::where('email', $request->email)->first();
+        $usuario = Usuario::where('correo', $request->correo)->first();
 
-        if ($user) {
+        if ($usuario) {
             return response()->json(['message' => 'Correo encontrado'], 200); // Correo EXISTE
         }
 
@@ -73,7 +73,7 @@ class UsuarioController extends Controller
             'nombre' => 'required|string|max:255',
             'apellido' => 'required|string|max:255',
             'correo' => 'required|email|string|max:255|unique:usuarios,correo',
-            'contrasena' => ['required','string','max:16','regex:/[a-zA-Z]/','regex:/[0-9]/','regex:/[\W]/'],
+            'contrasena' => ['required','string','min:8','max:16','regex:/[a-zA-Z]/','regex:/[0-9]/','regex:/[\W]/'],
             'fecha_nacimiento' => 'required|date',
             'pesoActual' => 'required|numeric|min:0',
             'pesoObjetivo' => 'required|numeric|min:0',
@@ -98,7 +98,7 @@ class UsuarioController extends Controller
             'fecha_nacimiento' => $request->fecha_nacimiento,
             'pesoActual' => $request->pesoActual,
             'pesoObjetivo' => $request->pesoObjetivo,
-            'nivel' => bcrypt($request->nivel),
+            'nivel' => $request->nivel,
             'rol' => $request->rol
         ]);
 
@@ -168,7 +168,7 @@ class UsuarioController extends Controller
     }
 
     public function enviarCode(Request $request) {
-        $request->validate(['correo' => 'required|email|string|max:255|exists:users,email']);
+        $request->validate(['correo' => 'required|email|string|max:255|exists:usuarios,correo']);
 
         $usuario = Usuario::where('correo', $request->correo)->first();
 
@@ -196,7 +196,7 @@ class UsuarioController extends Controller
 
     public function verificarCode(Request $request) {
         $request->validate([
-            'correo' => 'required|email|string|max:255|exists:users,email',
+            'correo' => 'required|email|string|max:255|exists:usuarios,correo',
             'code' => 'required'
         ]);
 
@@ -278,7 +278,7 @@ class UsuarioController extends Controller
         // Verificar si el usuario existe
         $usuario = Usuario::where('correo', $request->correo)->first();
 
-        if (!$user) {
+        if (!$usuario) {
             $data = [
                 'message' => 'Correo electrónico no encontrado',
                 'status' => 404
@@ -314,7 +314,7 @@ class UsuarioController extends Controller
             'nombre' => 'required|string|max:255',
             'apellido' => 'required|string|max:255',
             'correo' => 'required|email|string|max:255|unique:usuarios,correo,' . $id,
-            'contrasena' => ['required','string','max:16','regex:/[a-zA-Z]/','regex:/[0-9]/','regex:/[\W]/'],
+            'contrasena' => ['required','string','min:8','max:16','regex:/[a-zA-Z]/','regex:/[0-9]/','regex:/[\W]/'],
             'fecha_nacimiento' => 'required|date',
             'pesoActual' => 'required|numeric|min:0',
             'pesoObjetivo' => 'required|numeric|min:0',
@@ -363,15 +363,20 @@ class UsuarioController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'nombre' => 'required|string|max:255',
-            'apellido' => 'required|string|max:255',
-            'correo' => 'required|email|string|max:255|unique:usuarios,correo,' . $id,
-            'contrasena' => ['required','string','max:16','regex:/[a-zA-Z]/','regex:/[0-9]/','regex:/[\W]/'],
-            'fecha_nacimiento' => 'required|date',
-            'pesoActual' => 'required|numeric|min:0',
-            'pesoObjetivo' => 'required|numeric|min:0',
-            'nivel' => 'required|string|in:Aficionado,Intermedio,Avanzado',
-            'rol' => 'required|string|in:Usuario,Administrador'
+            'nombre' => 'string|max:255',
+            'apellido' => 'string|max:255',
+            'correo' => 'email|string|max:255|unique:usuarios,correo,' . $id,
+            'contrasena' => ['string','min:8','max:16','regex:/[a-zA-Z]/','regex:/[0-9]/','regex:/[\W]/'],
+            'fecha_nacimiento' => 'date',
+            'altura' => 'numeric|min:0',
+            'pesoActual' => 'numeric|min:0',
+            'pesoObjetivo' => 'numeric|min:0',
+            'nivel' => 'string|in:Aficionado,Intermedio,Avanzado',
+            'rol' => 'string|in:Usuario,Administrador',
+            'numero_tarjeta' => 'string|min:16|max:16|unique:usuarios,numero_tarjeta',
+            'nombre_titular' => 'string|max:255|unique:usuarios,nombre_titular',
+            'cvv' => 'string|min:3|max:3',
+            'fecha_vencimiento' => 'date'
         ]);
 
         if ($validator->fails()) {
@@ -403,6 +408,10 @@ class UsuarioController extends Controller
             $usuario->fecha_nacimiento = $request->fecha_nacimiento;
         }
 
+        if ($request->has('altura')) {
+            $usuario->altura = $request->altura;
+        }
+
         if ($request->has('pesoActual')) {
             $usuario->pesoActual = $request->pesoActual;
         }
@@ -417,6 +426,22 @@ class UsuarioController extends Controller
 
         if ($request->has('rol')) {
             $usuario->rol = $request->rol;
+        }
+
+        if ($request->has('numero_tarjeta')) {
+            $usuario->numero_tarjeta = $request->numero_tarjeta;
+        }
+
+        if ($request->has('nombre_titular')) {
+            $usuario->nombre_titular = $request->nombre_titular;
+        }
+
+        if ($request->has('cvv')) {
+            $usuario->cvv = $request->cvv;
+        }
+
+        if ($request->has('fecha_vencimiento')) {
+            $usuario->fecha_vencimiento = $request->fecha_vencimiento;
         }
 
         $usuario->save();

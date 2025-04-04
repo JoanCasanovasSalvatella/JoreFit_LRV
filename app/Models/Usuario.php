@@ -19,10 +19,15 @@ class Usuario extends Model
         'nombre',
         'apellido',
         'fecha_nacimiento',
+        'altura',
         'pesoActual',
         'pesoObjetivo',
         'nivel',
-        'rol'
+        'rol',
+        'numero_tarjeta',
+        'nombre_titular',
+        'cvv',
+        'fecha_vencimiento',
     ];
 
     // Relación con el modelo PlanAsignado

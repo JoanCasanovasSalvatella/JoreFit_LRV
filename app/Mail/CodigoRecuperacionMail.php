@@ -32,7 +32,7 @@ class CodigoRecuperacionMail extends Mailable
      */
     public function build()
     {
-        return $this->subject('AMAZONT - RECUPERAR CONTRASEÑA')
+        return $this->subject('JoreFIT - RECUPERAR CONTRASEÑA')
                     ->view('emails.codigo-recuperacion')
                     ->with(['codigo' => $this->codigo]);
     }

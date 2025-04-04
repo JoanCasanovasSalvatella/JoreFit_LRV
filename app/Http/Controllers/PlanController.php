@@ -15,7 +15,7 @@ use Illuminate\Validation\ValidationException;
 class PlanController extends Controller
 {
     //PLANES
-    public function mostrarPlanes() {
+    public function mostrarPlan() {
         $planes = Plan::all();
 
         if ($planes->isEmpty()) {
@@ -283,7 +283,7 @@ class PlanController extends Controller
         $planAsignado = PlanAsignado::create([
             'idPlan' => $request->idPlan,
             'idUsu' => $request->idUsu,
-            'completado' => $request->completado ?? false,  // Si no se proporciona, el valor predeterminado es 'false'
+            'completado' => false
         ]);
 
         // Si no se puede crear el plan asignado, se devuelve un error
@@ -429,42 +429,67 @@ class PlanController extends Controller
     //CONTRATAR PLAN
     public function contratarPlan(Request $request)
     {
-        // ✅ 1. Validación de los datos recibidos
-        $validated = $request->validate([
+        // ✅ Validar los datos de entrada
+        $validator = Validator::make($request->all(), [
             'idUsu' => 'required|exists:usuarios,id',
             'idPlan' => 'required|exists:planes,id',
-            'nivel' => 'required|in:Aficionado,Intermedio,Avanzado'
         ]);
 
-        // ✅ 2. Determinar la intensidad basada en el nivel del usuario
-        $intensidad = $this->getIntensidad($validated['nivel']);
-
-        // ✅ 3. Buscar los ejercicios del plan con la intensidad correspondiente
-        $ejercicios = Ejercicio::where('tipo', function ($query) use ($validated) {
-                $query->select('nombre')->from('planes')->where('id', $validated['idPlan']);
-            })
-            ->where('intensidad', $intensidad)
-            ->get();
-
-        if ($ejercicios->isEmpty()) {
-            throw ValidationException::withMessages([
-                'idPlan' => 'No hay ejercicios disponibles para este plan e intensidad.'
-            ]);
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Error en la validación de los datos',
+                'errors' => $validator->errors(),
+                'status' => 400
+            ], 400);
         }
 
-        // ✅ 4. Registrar el plan en la tabla planesAsignados
+        // ✅ Obtener el usuario y su nivel
+        $usuario = Usuario::find($request->idUsu);
+        $nivel = $usuario->nivel;
+
+        // ✅ Determinar la intensidad basada en el nivel del usuario
+        $intensidad = $this->getIntensidad($nivel);
+
+        // ✅ Obtener el nombre del plan
+        $plan = Plan::find($request->idPlan);
+
+        if (!$plan) {
+            return response()->json([
+                'message' => 'El plan no existe.',
+                'status' => 404
+            ], 404);
+        }
+
+        // ✅ Buscar los ejercicios basados en el nombre del plan y la intensidad
+        $ejercicios = Ejercicio::where('tipo', $plan->nombre)->where('intensidad', $intensidad)->get();
+
+        if ($ejercicios->isEmpty()) {
+            return response()->json([
+                'message' => 'No hay ejercicios disponibles para este plan e intensidad.',
+                'status' => 404
+            ], 404);
+        }
+
+        // ✅ Registrar el plan en la tabla planesAsignados
         $planAsignado = PlanAsignado::create([
-            'idPlan' => $validated['idPlan'],
-            'idUsu' => $validated['idUsu'],
+            'idPlan' => $request->idPlan,
+            'idUsu' => $request->idUsu,
             'completado' => false
         ]);
 
-        // ✅ 5. Registrar cada ejercicio en ejerciciosAsignados
+        if (!$planAsignado) {
+            return response()->json([
+                'message' => 'Error al asignar el plan',
+                'status' => 500
+            ], 500);
+        }
+
+        // ✅ Registrar cada ejercicio en ejerciciosAsignados
         foreach ($ejercicios as $ejercicio) {
             EjercicioAsignado::create([
-                'idPlan' => $validated['idPlan'],
+                'idPlan' => $request->idPlan,
                 'idEjer' => $ejercicio->id,
-                'idUsu' => $validated['idUsu'],
+                'idUsu' => $request->idUsu,
                 'completado' => false
             ]);
         }
@@ -472,20 +497,21 @@ class PlanController extends Controller
         return response()->json([
             'message' => 'Plan contratado y ejercicios asignados correctamente.',
             'planAsignado' => $planAsignado,
-            'ejerciciosAsignados' => $ejercicios
+            'ejerciciosAsignados' => $ejercicios,
+            'status' => 201
         ], 201);
     }
 
-    // ✅ 6. Función auxiliar para obtener la intensidad según el nivel
+    // ✅ Función auxiliar para obtener la intensidad según el nivel
     private function getIntensidad($nivel)
     {
         $niveles = [
             'Aficionado' => 'Leve',
-            'Intermedio' => 'Medio',
-            'Avanzado' => 'Alto'
+            'Intermedio' => 'Media',
+            'Avanzado' => 'Alta'
         ];
 
-        return $niveles[$nivel] ?? 'leve'; // Valor por defecto
+        return $niveles[$nivel];
     }
 
     //VER MIS PLANES

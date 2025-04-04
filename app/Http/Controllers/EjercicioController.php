@@ -56,13 +56,13 @@ class EjercicioController extends Controller
     public function crearEjercicios(Request $request) {
         $validator = Validator::make($request->all(), [
             'imagen' => 'nullable|string|max:255',
-            'nombre' => 'required|string|max:255',
+            'nombres' => 'required|string|max:255',
             'descripcion' => 'required|string',
             'series' => 'required|integer|min:1',
             'repeticiones' => 'required|string|max:255',
-            'tipo' => 'required|string|string|max:255',
+            'tipo' => 'required|string|max:255|exists:planes,nombre',
             'musculo' => 'required|string|in:Pecho,Espalda,Brazo,Pierna,Corporal',
-            'intensidad' => 'required|string|in:Leve,Medio,Alto'
+            'intensidad' => 'required|string|in:Leve,Media,Alta'
         ]);
 
         if ($validator->fails()) {
@@ -76,7 +76,7 @@ class EjercicioController extends Controller
 
         $ejercicio = Ejercicio::create([
             'imagen' => $request->imagen,
-            'nombre' => $request->nombre,
+            'nombres' => $request->nombres,
             'descripcion' => $request->descripcion,
             'series' => $request->series,
             'repeticiones' => $request->repeticiones,
@@ -114,13 +114,13 @@ class EjercicioController extends Controller
 
         $validator = Validator::make($request->all(), [
             'imagen' => 'nullable|string|max:255',
-            'nombre' => 'required|string|max:255',
+            'nombres' => 'required|string|max:255',
             'descripcion' => 'required|string',
             'series' => 'required|integer|min:1',
-            'repeticiones' => 'required|integer|min:1',
-            'tipo' => 'required|string|max:255',
-            'musculo' => 'required|string|max:255',
-            'intensidad' => 'required|string|max:255'
+            'repeticiones' => 'required|string|max:255',
+            'tipo' => 'required|string|max:255|exists:planes,nombre',
+            'musculo' => 'required|string|in:Pecho,Espalda,Brazo,Pierna,Corporal',
+            'intensidad' => 'required|string|in:Leve,Media,Alta'
         ]);
 
         if ($validator->fails()) {
@@ -133,7 +133,7 @@ class EjercicioController extends Controller
         }
 
         $ejercicio->imagen = $request->imagen;
-        $ejercicio->nombre = $request->nombre;
+        $ejercicio->nombres = $request->nombres;
         $ejercicio->descripcion = $request->descripcion;
         $ejercicio->series = $request->series;
         $ejercicio->repeticiones = $request->repeticiones;
@@ -164,13 +164,13 @@ class EjercicioController extends Controller
 
         $validator = Validator::make($request->all(), [
             'imagen' => 'string|max:255',
-            'nombre' => 'string|max:255',
+            'nombres' => 'string|max:255',
             'descripcion' => 'string',
             'series' => 'integer|min:1',
             'repeticiones' => 'string|max:255',
-            'tipo' => 'string|max:255',
+            'tipo' => 'string|max:255|exists:planes,nombre',
             'musculo' => 'string|in:Pecho,Espalda,Brazo,Pierna,Corporal',
-            'intensidad' => 'string|in:Leve,Medio,Alto'
+            'intensidad' => 'string|in:Leve,Media,Alta'
         ]);
 
         if ($validator->fails()) {
@@ -186,8 +186,8 @@ class EjercicioController extends Controller
             $ejercicio->imagen = $request->imagen;
         }
 
-        if ($request->has('nombre')) {
-            $ejercicio->nombre = $request->nombre;
+        if ($request->has('nombres')) {
+            $ejercicio->nombres = $request->nombres;
         }
 
         if ($request->has('descripcion')) {
@@ -295,7 +295,7 @@ class EjercicioController extends Controller
             'idPlan' => 'required|exists:planes,id', // Asegura que el plan exista
             'idEjer' => 'required|exists:ejercicios,id', // Asegura que el ejercicio exista
             'idUsu' => 'required|exists:usuarios,id', // Asegura que el usuario exista
-            'completado' => 'nullable|boolean' // 'completado' es un valor booleano opcional
+            'completado' => 'nullable|boolean'
         ]);
 
         // Si la validación falla
@@ -313,7 +313,7 @@ class EjercicioController extends Controller
             'idPlan' => $request->idPlan,
             'idEjer' => $request->idEjer,
             'idUsu' => $request->idUsu,
-            'completado' => $request->completado ?? false // Si no se pasa, se establece como false
+            'completado' => false
         ]);
 
         // Si no se pudo crear el ejercicio asignado
@@ -351,7 +351,7 @@ class EjercicioController extends Controller
             'idPlan' => 'nullable|exists:planes,id', // Si se pasa, debe existir en la tabla 'planes'
             'idEjer' => 'nullable|exists:ejercicios,id', // Si se pasa, debe existir en la tabla 'ejercicios'
             'idUsu' => 'nullable|exists:usuarios,id', // Si se pasa, debe existir en la tabla 'usuarios'
-            'completado' => 'nullable|boolean' // Si se pasa, debe ser un valor booleano
+            'completado' => 'nullable|boolean'
         ]);
 
         // Si la validación falla
@@ -397,7 +397,7 @@ class EjercicioController extends Controller
             'idPlan' => 'nullable|exists:planes,id', // Si se pasa, debe existir en la tabla 'planes'
             'idEjer' => 'nullable|exists:ejercicios,id', // Si se pasa, debe existir en la tabla 'ejercicios'
             'idUsu' => 'nullable|exists:usuarios,id', // Si se pasa, debe existir en la tabla 'usuarios'
-            'completado' => 'nullable|boolean' // Si se pasa, debe ser un valor booleano
+            'completado' => 'nullable|boolean'
         ]);
 
         // Si la validación falla
@@ -554,6 +554,18 @@ class EjercicioController extends Controller
             ], 400);
         }
 
+        // ✅ Verificamos que el nuevo ejercicio no esté ya asignado al mismo usuario y plan
+        $existeYaAsignado = EjercicioAsignado::where('idUsu', $ejercicioAsignado->idUsu)
+        ->where('idPlan', $ejercicioAsignado->idPlan)
+        ->where('idEjer', $nuevoEjercicio->id)
+        ->exists();
+
+        if ($existeYaAsignado) {
+            return response()->json([
+                'error' => 'Este ejercicio ya está asignado a este usuario en el mismo plan.'
+            ], 400);
+        }
+
         // ✅ Actualizamos el ejercicio asignado
         $ejercicioAsignado->idEjer = $nuevoEjercicio->id;
         $ejercicioAsignado->save();
@@ -586,7 +598,7 @@ class EjercicioController extends Controller
 
         // Si no hay ejercicios pendientes, marcar el plan como completado
         if (!$ejerciciosPendientes) {
-            PlanAsignado::where('id', $ejercicioAsignado->idPlan)
+            PlanAsignado::where('idPlan', $ejercicioAsignado->idPlan)
                 ->update(['completado' => true]);
 
             return response()->json([
